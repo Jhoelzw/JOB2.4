@@ -2,39 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* WorkMatch Chile Design System - Colores para plataforma laboral chilena
+Todos los colores en HSL para consistencia del design system
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 98%;
+    --foreground: 218 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 218 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 218 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Colores principales WorkMatch Chile */
+    --primary: 218 100% 31%; /* #0033A0 - Azul chileno */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 218 100% 45%;
+    --primary-glow: 218 100% 85%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --success: 142 76% 36%; /* #16A34A - Verde confirmación */
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 76% 50%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: 218 20% 95%;
+    --secondary-foreground: 218 25% 15%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 218 15% 96%;
+    --muted-foreground: 218 15% 45%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 142 30% 95%;
+    --accent-foreground: 142 76% 25%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 218 20% 90%;
+    --input: 218 20% 92%;
+    --ring: 218 100% 31%;
+
+    /* Gradientes para WorkMatch */
+    --gradient-primary: linear-gradient(135deg, hsl(218 100% 31%), hsl(218 100% 45%));
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 50%));
+    --gradient-hero: linear-gradient(135deg, hsl(218 100% 31%), hsl(142 76% 36%));
+    
+    /* Sombras */
+    --shadow-primary: 0 4px 20px hsl(218 100% 31% / 0.15);
+    --shadow-success: 0 4px 20px hsl(142 76% 36% / 0.15);
+    --shadow-elegant: 0 8px 32px hsl(218 100% 31% / 0.12);
 
     --radius: 0.5rem;
 
