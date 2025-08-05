@@ -15,7 +15,7 @@ export const LandingHero = () => {
             </div>
             <h1 className="text-xl font-bold text-primary">WorkMatch Chile</h1>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => window.location.href = '/auth'}>
             Iniciar Sesión
           </Button>
         </div>
@@ -37,11 +37,11 @@ export const LandingHero = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="hero" size="lg" className="text-lg">
+              <Button variant="hero" size="lg" className="text-lg" onClick={() => window.location.href = '/auth'}>
                 <Users className="h-5 w-5" />
                 Soy Trabajador
               </Button>
-              <Button variant="outline" size="lg" className="text-lg">
+              <Button variant="outline" size="lg" className="text-lg" onClick={() => window.location.href = '/auth'}>
                 <Briefcase className="h-5 w-5" />
                 Soy Empleador
               </Button>
