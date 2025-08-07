@@ -8,16 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-
-const CATEGORIES = {
-  agricultura: 'Agricultura y Pesca 🌾',
-  comercio: 'Comercio y Ventas 🛒',
-  oficios: 'Oficios y Construcción 🔧',
-  domesticos: 'Servicios Domésticos 🏠',
-  transporte: 'Transporte y Delivery 🚚'
-};
+import { WORK_CATEGORIES, COMUNAS_SANTIAGO, formatCLP } from '@/data/chileanData';
 
 const CreateJob = () => {
   const navigate = useNavigate();
@@ -31,8 +24,14 @@ const CreateJob = () => {
     payment_type: 'por_dia',
     location: '',
     date_needed: '',
-    duration_hours: ''
+    duration: ''
   });
+
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  const getSelectedCategoryData = () => {
+    return WORK_CATEGORIES.find(cat => cat.id === selectedCategory);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +50,10 @@ const CreateJob = () => {
         payment_type: jobData.payment_type,
         location: jobData.location,
         date_needed: jobData.date_needed,
-        duration_hours: jobData.duration_hours ? parseInt(jobData.duration_hours) : null
+        duration_hours: jobData.duration === 'varios_dias' ? null : 
+                      jobData.duration === 'dia_completo' ? 8 :
+                      jobData.duration === 'medio_dia' ? 4 :
+                      jobData.duration === '1-2h' ? 2 : null
       });
     
     if (error) {
@@ -104,14 +106,17 @@ const CreateJob = () => {
                 <Label htmlFor="category">Categoría</Label>
                 <Select 
                   value={jobData.category} 
-                  onValueChange={(value) => setJobData(prev => ({ ...prev, category: value }))}
+                  onValueChange={(value) => {
+                    setJobData(prev => ({ ...prev, category: value }));
+                    setSelectedCategory(value);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(CATEGORIES).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    {WORK_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -129,45 +134,66 @@ const CreateJob = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="payment_amount">Pago (CLP)</Label>
-                  <Input
-                    id="payment_amount"
-                    type="number"
-                    value={jobData.payment_amount}
-                    onChange={(e) => setJobData(prev => ({ ...prev, payment_amount: e.target.value }))}
-                    placeholder="25000"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="payment_type">Tipo de Pago</Label>
-                  <Select 
-                    value={jobData.payment_type} 
-                    onValueChange={(value) => setJobData(prev => ({ ...prev, payment_type: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="por_hora">Por Hora</SelectItem>
-                      <SelectItem value="por_dia">Por Día</SelectItem>
-                      <SelectItem value="por_trabajo">Por Trabajo</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="payment_amount">Presupuesto (CLP)</Label>
+                  {selectedCategory && getSelectedCategoryData() && (
+                    <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900">Rangos referenciales {getSelectedCategoryData()?.emoji}</span>
+                      </div>
+                      <div className="text-sm text-blue-700">
+                        <p>Por hora: {formatCLP(getSelectedCategoryData()!.hourlyRange.min)} - {formatCLP(getSelectedCategoryData()!.hourlyRange.max)}</p>
+                        <p>Por día: {formatCLP(getSelectedCategoryData()!.dailyRange.min)} - {formatCLP(getSelectedCategoryData()!.dailyRange.max)}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        id="payment_amount"
+                        type="number"
+                        value={jobData.payment_amount}
+                        onChange={(e) => setJobData(prev => ({ ...prev, payment_amount: e.target.value }))}
+                        placeholder="25000"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Select 
+                        value={jobData.payment_type} 
+                        onValueChange={(value) => setJobData(prev => ({ ...prev, payment_type: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Tipo de pago" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="por_hora">Por Hora</SelectItem>
+                          <SelectItem value="por_dia">Por Día</SelectItem>
+                          <SelectItem value="por_trabajo">Por Trabajo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="location">Ubicación</Label>
-                <Input
-                  id="location"
-                  value={jobData.location}
-                  onChange={(e) => setJobData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Comuna, Región"
-                  required
-                />
+                <Label htmlFor="location">Comuna</Label>
+                <Select 
+                  value={jobData.location} 
+                  onValueChange={(value) => setJobData(prev => ({ ...prev, location: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona comuna" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMUNAS_SANTIAGO.map((comuna) => (
+                      <SelectItem key={comuna} value={comuna}>{comuna}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -182,14 +208,21 @@ const CreateJob = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="duration_hours">Duración (horas)</Label>
-                  <Input
-                    id="duration_hours"
-                    type="number"
-                    value={jobData.duration_hours}
-                    onChange={(e) => setJobData(prev => ({ ...prev, duration_hours: e.target.value }))}
-                    placeholder="8"
-                  />
+                  <Label htmlFor="duration">Duración Estimada</Label>
+                  <Select 
+                    value={jobData.duration} 
+                    onValueChange={(value) => setJobData(prev => ({ ...prev, duration: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona duración" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1-2h">1-2 horas</SelectItem>
+                      <SelectItem value="medio_dia">Medio día (4h)</SelectItem>
+                      <SelectItem value="dia_completo">Día completo (8h)</SelectItem>
+                      <SelectItem value="varios_dias">Varios días</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
