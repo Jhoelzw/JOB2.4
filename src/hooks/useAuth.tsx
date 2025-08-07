@@ -12,6 +12,13 @@ interface Profile {
   avatar_url?: string;
   location?: string;
   bio?: string;
+  categories?: string[];
+  hourly_rate?: number;
+  comuna?: string;
+  whatsapp?: string;
+  experience?: string;
+  employer_type?: string;
+  rut?: string;
 }
 
 interface AuthContextType {

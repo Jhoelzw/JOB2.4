@@ -5,16 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Clock, DollarSign, Plus, MessageCircle } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Plus, MessageCircle, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { WORK_CATEGORIES, formatCLP } from '@/data/chileanData';
+import PricingGuide from '@/components/PricingGuide';
 
-const CATEGORIES = {
-  agricultura: { name: 'Agricultura y Pesca', icon: '🌾' },
-  comercio: { name: 'Comercio y Ventas', icon: '🛒' },
-  oficios: { name: 'Oficios y Construcción', icon: '🔧' },
-  domesticos: { name: 'Servicios Domésticos', icon: '🏠' },
-  transporte: { name: 'Transporte y Delivery', icon: '🚚' }
-};
+// Convert WORK_CATEGORIES to the format expected by Dashboard
+const CATEGORIES = WORK_CATEGORIES.reduce((acc, cat) => {
+  acc[cat.id] = { name: cat.name, icon: cat.emoji };
+  return acc;
+}, {} as Record<string, { name: string; icon: string }>);
 
 interface Job {
   id: string;
@@ -37,6 +37,7 @@ const Dashboard = () => {
   const { profile, signOut } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPricingGuide, setShowPricingGuide] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,10 +64,7 @@ const Dashboard = () => {
   };
 
   const formatPayment = (amount: number, type: string) => {
-    const formatted = new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP'
-    }).format(amount);
+    const formatted = formatCLP(amount);
     
     const typeMap = {
       por_hora: 'por hora',
@@ -188,6 +186,38 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
+        {/* Pricing Guide for Workers */}
+        {profile?.user_type === 'trabajador' && (
+          <div className="mb-6">
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <h3 className="font-semibold text-blue-900">Guía de Precios 2025</h3>
+                      <p className="text-sm text-blue-700">Consulta tarifas referenciales del mercado</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowPricingGuide(!showPricingGuide)}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    {showPricingGuide ? 'Ocultar' : 'Ver Precios'}
+                  </Button>
+                </div>
+                {showPricingGuide && (
+                  <div className="mt-4">
+                    <PricingGuide />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-2">
             {profile?.user_type === 'trabajador' ? 'Trabajos Disponibles' : 'Trabajos Activos'}

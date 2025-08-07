@@ -211,41 +211,62 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          categories: string[] | null
+          comuna: string | null
           created_at: string
+          employer_type: string | null
+          experience: string | null
           first_name: string
+          hourly_rate: number | null
           id: string
           last_name: string
           location: string | null
           phone: string | null
+          rut: string | null
           updated_at: string
           user_id: string
           user_type: string
+          whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          categories?: string[] | null
+          comuna?: string | null
           created_at?: string
+          employer_type?: string | null
+          experience?: string | null
           first_name: string
+          hourly_rate?: number | null
           id?: string
           last_name: string
           location?: string | null
           phone?: string | null
+          rut?: string | null
           updated_at?: string
           user_id: string
           user_type: string
+          whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          categories?: string[] | null
+          comuna?: string | null
           created_at?: string
+          employer_type?: string | null
+          experience?: string | null
           first_name?: string
+          hourly_rate?: number | null
           id?: string
           last_name?: string
           location?: string | null
           phone?: string | null
+          rut?: string | null
           updated_at?: string
           user_id?: string
           user_type?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
