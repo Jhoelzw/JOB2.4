@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Clock, DollarSign, Plus, MessageCircle, TrendingUp, Eye } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Plus, MessageCircle, TrendingUp, Eye, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WORK_CATEGORIES, formatCLP } from '@/data/chileanData';
 import PricingGuide from '@/components/PricingGuide';
 import JobDetailsModal from '@/components/JobDetailsModal';
 import JobFilters, { JobFilters as JobFiltersType } from '@/components/JobFilters';
+import NotificationCenter from '@/components/NotificationCenter';
+import EmployerApplications from '@/components/EmployerApplications';
 import { toast } from '@/hooks/use-toast';
 
 // Convert WORK_CATEGORIES to the format expected by Dashboard
@@ -44,11 +46,59 @@ const Dashboard = () => {
   const [showPricingGuide, setShowPricingGuide] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showJobModal, setShowJobModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [activeTab, setActiveTab] = useState<'jobs' | 'applications'>('jobs');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  useEffect(() => {
+    if (profile) {
+      fetchUnreadCounts();
+      
+      // Subscribe to notifications
+      const notificationChannel = supabase
+        .channel('notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${profile.id}`
+          },
+          () => {
+            fetchUnreadCounts();
+          }
+        )
+        .subscribe();
+
+      // Subscribe to messages
+      const messageChannel = supabase
+        .channel('messages')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages'
+          },
+          () => {
+            fetchUnreadCounts();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(notificationChannel);
+        supabase.removeChannel(messageChannel);
+      };
+    }
+  }, [profile]);
 
   const fetchJobs = async () => {
     const { data, error } = await supabase
@@ -68,6 +118,39 @@ const Dashboard = () => {
       setFilteredJobs(data as any);
     }
     setLoading(false);
+  };
+
+  const fetchUnreadCounts = async () => {
+    if (!profile) return;
+
+    // Count unread notifications
+    const { count: notificationCount } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', profile.id)
+      .eq('is_read', false);
+
+    setUnreadNotifications(notificationCount || 0);
+
+    // Count unread messages
+    const { data: chats } = await supabase
+      .from('chats')
+      .select('id')
+      .or(`worker_id.eq.${profile.id},employer_id.eq.${profile.id}`);
+
+    if (chats) {
+      const chatIds = chats.map(chat => chat.id);
+      if (chatIds.length > 0) {
+        const { count: messageCount } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .in('chat_id', chatIds)
+          .neq('sender_id', profile.id)
+          .eq('is_read', false);
+
+        setUnreadMessages(messageCount || 0);
+      }
+    }
   };
 
   const formatPayment = (amount: number, type: string) => {
@@ -100,6 +183,28 @@ const Dashboard = () => {
         variant: "destructive"
       });
       return;
+    }
+
+    // Crear chat si no existe
+    const job = jobs.find(j => j.id === jobId);
+    if (job) {
+      const { data: existingChat } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('job_id', jobId)
+        .eq('worker_id', profile.id)
+        .eq('employer_id', job.profiles.id)
+        .single();
+
+      if (!existingChat) {
+        await supabase
+          .from('chats')
+          .insert({
+            job_id: jobId,
+            worker_id: profile.id,
+            employer_id: job.profiles.id
+          });
+      }
     }
 
     const { error } = await supabase
@@ -258,6 +363,41 @@ const Dashboard = () => {
                 Publicar Trabajo
               </Button>
             )}
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/chat')}
+                className="relative"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Chat
+                {unreadMessages > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 text-xs p-0 flex items-center justify-center"
+                  >
+                    {unreadMessages}
+                  </Badge>
+                )}
+              </Button>
+            </div>
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowNotifications(true)}
+                className="relative"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadNotifications > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 text-xs p-0 flex items-center justify-center"
+                  >
+                    {unreadNotifications}
+                  </Badge>
+                )}
+              </Button>
+            </div>
             <Button variant="outline" onClick={() => navigate('/perfil')}>
               Perfil
             </Button>
@@ -302,36 +442,67 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">
-            {profile?.user_type === 'trabajador' ? 'Trabajos Disponibles' : 'Trabajos Activos'}
-          </h2>
-        </div>
-
-        {/* Filters */}
-        <JobFilters onFilterChange={applyFilters} totalJobs={filteredJobs.length} />
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
-
-        {filteredJobs.length === 0 && jobs.length > 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No hay trabajos que coincidan con los filtros</p>
+        {/* Tab Navigation for Employers */}
+        {profile?.user_type === 'empleador' && (
+          <div className="mb-6">
+            <div className="flex space-x-1 bg-muted p-1 rounded-lg w-fit">
+              <Button
+                variant={activeTab === 'jobs' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('jobs')}
+                className="px-6"
+              >
+                Mis Trabajos
+              </Button>
+              <Button
+                variant={activeTab === 'applications' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('applications')}
+                className="px-6"
+              >
+                Aplicaciones
+              </Button>
+            </div>
           </div>
         )}
 
-        {jobs.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No hay trabajos disponibles</p>
-            {profile?.user_type === 'empleador' && (
-              <Button onClick={() => navigate('/crear-trabajo')}>
-                Publicar el primer trabajo
-              </Button>
-            )}
+        {profile?.user_type === 'trabajador' && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-4">Trabajos Disponibles</h2>
           </div>
+        )}
+
+        {/* Content based on active tab */}
+        {profile?.user_type === 'empleador' && activeTab === 'applications' ? (
+          <EmployerApplications />
+        ) : (
+          <>
+            {/* Filters */}
+            <JobFilters onFilterChange={applyFilters} totalJobs={filteredJobs.length} />
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredJobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+            </div>
+
+            {filteredJobs.length === 0 && jobs.length > 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">No hay trabajos que coincidan con los filtros</p>
+              </div>
+            )}
+
+            {jobs.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">
+                  {profile?.user_type === 'trabajador' ? 'No hay trabajos disponibles' : 'No has publicado trabajos'}
+                </p>
+                {profile?.user_type === 'empleador' && (
+                  <Button onClick={() => navigate('/crear-trabajo')}>
+                    Publicar el primer trabajo
+                  </Button>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {/* Job Details Modal */}
@@ -342,6 +513,12 @@ const Dashboard = () => {
           onApply={handleApplyJob}
           onMessage={() => navigate('/chat')}
           canApply={profile?.user_type === 'trabajador'}
+        />
+
+        {/* Notification Center */}
+        <NotificationCenter
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
         />
       </main>
     </div>
