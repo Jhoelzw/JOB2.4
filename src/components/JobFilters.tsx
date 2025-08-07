@@ -30,7 +30,9 @@ const JobFilters = ({ onFilterChange, totalJobs }: JobFiltersProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const updateFilter = (key: keyof JobFilters, value: string) => {
-    const newFilters = { ...filters, [key]: value };
+    // Convert special "all" values back to empty strings for filter state
+    const filterValue = value === 'all-categories' || value === 'all-comunas' ? '' : value;
+    const newFilters = { ...filters, [key]: filterValue };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -73,12 +75,12 @@ const JobFilters = ({ onFilterChange, totalJobs }: JobFiltersProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="category-filter">Categoría</Label>
-              <Select value={filters.category} onValueChange={(value) => updateFilter('category', value)}>
+              <Select value={filters.category || 'all-categories'} onValueChange={(value) => updateFilter('category', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las categorías</SelectItem>
+                  <SelectItem value="all-categories">Todas las categorías</SelectItem>
                   {WORK_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                   ))}
@@ -88,12 +90,12 @@ const JobFilters = ({ onFilterChange, totalJobs }: JobFiltersProps) => {
 
             <div>
               <Label htmlFor="comuna-filter">Comuna</Label>
-              <Select value={filters.comuna} onValueChange={(value) => updateFilter('comuna', value)}>
+              <Select value={filters.comuna || 'all-comunas'} onValueChange={(value) => updateFilter('comuna', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las comunas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las comunas</SelectItem>
+                  <SelectItem value="all-comunas">Todas las comunas</SelectItem>
                   {COMUNAS_SANTIAGO.map((comuna) => (
                     <SelectItem key={comuna} value={comuna}>{comuna}</SelectItem>
                   ))}
