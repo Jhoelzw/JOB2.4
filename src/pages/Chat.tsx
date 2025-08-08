@@ -129,20 +129,15 @@ const Chat = () => {
         *,
         jobs:job_id (title),
         worker:profiles!chats_worker_id_fkey (first_name, last_name),
-        employer:profiles!chats_employer_id_fkey (first_name, last_name),
-        applications:applications!applications_job_id_fkey (id, status)
+        employer:profiles!chats_employer_id_fkey (first_name, last_name)
       `)
       .or(`worker_id.eq.${profile.id},employer_id.eq.${profile.id}`)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      // Solo mostrar chats donde la aplicación fue aceptada
-      const acceptedChats = data.filter(chat => 
-        chat.applications && chat.applications.status === 'aceptada'
-      ) as ChatRoom[];
-      setChats(acceptedChats);
+      setChats(data as ChatRoom[]);
       if (data.length > 0 && !selectedChat) {
-        setSelectedChat(acceptedChats[0] as ChatRoom);
+        setSelectedChat(data[0] as ChatRoom);
       }
     }
     setLoading(false);
