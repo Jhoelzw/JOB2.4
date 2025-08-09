@@ -14,6 +14,8 @@ import JobFilters, { JobFilters as JobFiltersType } from '@/components/JobFilter
 import NotificationCenter from '@/components/NotificationCenter';
 import EmployerApplications from '@/components/EmployerApplications';
 import { toast } from '@/hooks/use-toast';
+import NotificationBell from '@/components/NotificationBell';
+import JobDetails from '@/components/JobDetails';
 
 // Convert WORK_CATEGORIES to the format expected by Dashboard
 const CATEGORIES = WORK_CATEGORIES.reduce((acc, cat) => {
@@ -382,21 +384,7 @@ const Dashboard = () => {
               </Button>
             </div>
             <div className="relative">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowNotifications(true)}
-                className="relative"
-              >
-                <Bell className="h-4 w-4" />
-                {unreadNotifications > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-2 -right-2 h-5 w-5 text-xs p-0 flex items-center justify-center"
-                  >
-                    {unreadNotifications}
-                  </Badge>
-                )}
-              </Button>
+              <NotificationBell />
             </div>
             <Button variant="outline" onClick={() => navigate('/perfil')}>
               Perfil
@@ -506,20 +494,15 @@ const Dashboard = () => {
         )}
 
         {/* Job Details Modal */}
-        <JobDetailsModal
+        <JobDetails
           job={selectedJob}
           isOpen={showJobModal}
           onClose={() => setShowJobModal(false)}
           onApply={handleApplyJob}
-          onMessage={() => navigate('/chat')}
           canApply={profile?.user_type === 'trabajador'}
         />
 
         {/* Notification Center */}
-        <NotificationCenter
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
-        />
       </main>
     </div>
   );
